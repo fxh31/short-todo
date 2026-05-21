@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}}; script-src 'nonce-{{nonce}}';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="{{styleUri}}" />
+</head>
+<body>
+  <header class="toolbar">
+    <div class="filter-group">
+      <button type="button" class="filter-btn active" data-filter="all">全部</button>
+      <button type="button" class="filter-btn" data-filter="workspace" id="filter-workspace" disabled>当前工作区</button>
+    </div>
+    <form class="add-form" id="add-form">
+      <input type="date" id="add-date" class="add-date" />
+      <input type="text" id="add-input" class="add-input" placeholder="添加待办…" autocomplete="off" />
+      <button type="submit" class="add-btn" title="添加">+</button>
+    </form>
+  </header>
+  <main id="list" class="list"></main>
+  <p id="empty" class="empty hidden">暂无待办</p>
+  <aside id="detail-panel" class="detail-panel hidden" aria-label="待办详情">
+    <div class="detail-header">
+      <h3 class="detail-title">详情</h3>
+      <button type="button" id="detail-close" class="detail-close" title="关闭">×</button>
+    </div>
+    <div class="detail-main-content">
+      <div id="detail-title-display" class="detail-title-display"></div>
+      <textarea id="detail-content-input" class="detail-content-input" placeholder="添加详情内容..."></textarea>
+    </div>
+    <dl class="detail-body">
+      <dt>日期</dt>
+      <dd id="detail-date"></dd>
+      <dt>状态</dt>
+      <dd id="detail-status"></dd>
+      <dt>创建时间</dt>
+      <dd id="detail-created"></dd>
+      <dt>工作区</dt>
+      <dd id="detail-workspace"></dd>
+    </dl>
+    <p class="detail-hint">单击条目查看详情 · 双击标记已办</p>
+  </aside>
+  <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+{
+  "name": "short-todo",
+  "displayName": "Short Todo",
+  "description": "按日期记录的待办清单，支持详情编辑、工作区筛选，完成项显示删除线",
+  "version": "1.1.0",
+  "publisher": "ferhannah",
+  "author": {
+    "name": "ferhannah"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fxh31/short-todo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fxh31/short-todo/issues"
+  },
+  "homepage": "https://github.com/fxh31/short-todo#readme",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "todo",
+    "todolist",
+    "task",
+    "待办",
+    "清单"
+  ],
+  "activationEvents": [
+    "onView:todolist.todoView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "todolist",
+          "title": "待办",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "todolist": [
+        {
+          "type": "webview",
+          "id": "todolist.todoView",
+          "name": "待办列表"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "todolist.add",
+        "title": "添加待办",
+        "icon": "$(add)"
+      },
+      {
+        "command": "todolist.refresh",
+        "title": "刷新",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "todolist.add",
+          "when": "view == todolist.todoView",
+          "group": "navigation"
+        },
+        {
+          "command": "todolist.refresh",
+          "when": "view == todolist.todoView",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "out/**",
+    "media/**",
+    "src/webview/**",
+    "LICENSE.txt",
+    "CHANGELOG.md",
+    "README.md"
+  ]
+}
