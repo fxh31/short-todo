@@ -26,7 +26,7 @@
       <button type="button" id="detail-close" class="detail-close" title="关闭">×</button>
     </div>
     <div class="detail-main-content">
-      <div id="detail-title-display" class="detail-title-display"></div>
+      <input type="text" id="detail-title-input" class="detail-title-input" placeholder="待办标题" />
       <textarea id="detail-content-input" class="detail-content-input" placeholder="添加详情内容..."></textarea>
     </div>
     <dl class="detail-body">
@@ -39,7 +39,6 @@
       <dt>工作区</dt>
       <dd id="detail-workspace"></dd>
     </dl>
-    <p class="detail-hint">单击条目查看详情 · 双击标记已办</p>
   </aside>
   <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
 </body>

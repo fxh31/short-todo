@@ -44,6 +44,9 @@ export class TodoViewProvider implements vscode.WebviewViewProvider {
         case 'updateContent':
           await this.storage.updateContent(msg.id, msg.content);
           break;
+        case 'updateText':
+          await this.storage.updateText(msg.id, msg.text);
+          break;
         case 'complete':
           await this.storage.complete(msg.id);
           break;

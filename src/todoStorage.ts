@@ -76,6 +76,16 @@ export class TodoStorage {
     }
   }
 
+  async updateText(id: string, text: string): Promise<void> {
+    const store = await this.load();
+    const item = store.items.find((i) => i.id === id);
+    const nextText = text.trim();
+    if (item && nextText) {
+      item.text = nextText;
+      await this.save(store);
+    }
+  }
+
   async complete(id: string): Promise<void> {
     const store = await this.load();
     const item = store.items.find((i) => i.id === id);

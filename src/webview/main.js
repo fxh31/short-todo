@@ -9,7 +9,7 @@
   const filterWorkspaceBtn = document.getElementById('filter-workspace');
   const detailPanel = document.getElementById('detail-panel');
   const detailClose = document.getElementById('detail-close');
-  const detailTitleDisplay = document.getElementById('detail-title-display');
+  const detailTitleInput = document.getElementById('detail-title-input');
   const detailContentInput = document.getElementById('detail-content-input');
   const detailDate = document.getElementById('detail-date');
   const detailStatus = document.getElementById('detail-status');
@@ -19,7 +19,31 @@
   let selectedId = null;
   let clickTimer = null;
   let contentSaveTimer = null;
+  let titleSaveTimer = null;
   const CLICK_DELAY = 280;
+
+  const CHECKBOX_SVG =
+    '<svg class="todo-checkbox-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<circle class="icon-unchecked" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2" fill="none"/>' +
+    '<g class="icon-checked">' +
+    '<path d="M20.5 14.5a9 9 0 1 1-2.1-8.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>' +
+    '<path d="M7.5 12.3l3.2 3.2 6.7-6.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</g></svg>';
+
+  function createCheckbox(item) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'todo-checkbox' + (item.completed ? ' checked' : '');
+    btn.setAttribute('role', 'checkbox');
+    btn.setAttribute('aria-checked', item.completed ? 'true' : 'false');
+    btn.title = '切换完成状态';
+    btn.innerHTML = CHECKBOX_SVG;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      vscode.postMessage({ type: 'toggle', id: item.id });
+    });
+    return btn;
+  }
 
   function todayString() {
     const d = new Date();
@@ -87,8 +111,11 @@
   function showDetail(item) {
     selectedId = item.id;
     detailPanel.classList.remove('hidden');
-    detailTitleDisplay.textContent = item.text;
-    detailTitleDisplay.classList.toggle('done', item.completed);
+    if (document.activeElement !== detailTitleInput || detailTitleInput.dataset.editingId !== item.id) {
+      detailTitleInput.value = item.text;
+      detailTitleInput.dataset.editingId = item.id;
+    }
+    detailTitleInput.classList.toggle('done', item.completed);
     
     // Only update content value if it's not currently focused by the user
     // to prevent cursor jumping during typing
@@ -115,6 +142,17 @@
     const id = selectedId;
     contentSaveTimer = setTimeout(function () {
       vscode.postMessage({ type: 'updateContent', id: id, content: content });
+    }, 500);
+  });
+
+  detailTitleInput.addEventListener('input', function () {
+    if (!selectedId) return;
+    if (titleSaveTimer) clearTimeout(titleSaveTimer);
+    const text = detailTitleInput.value;
+    const id = selectedId;
+    titleSaveTimer = setTimeout(function () {
+      if (!text.trim()) return;
+      vscode.postMessage({ type: 'updateText', id: id, text: text });
     }, 500);
   });
 
@@ -204,13 +242,7 @@
         if (item.id === selectedId) row.classList.add('selected');
         row.dataset.id = item.id;
 
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.className = 'todo-checkbox';
-        cb.checked = item.completed;
-        cb.addEventListener('change', function () {
-          vscode.postMessage({ type: 'toggle', id: item.id });
-        });
+        const cb = createCheckbox(item);
 
         const span = document.createElement('span');
         span.className = 'todo-text';
