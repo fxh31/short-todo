@@ -17,10 +17,8 @@
   const detailWorkspace = document.getElementById('detail-workspace');
 
   let selectedId = null;
-  let clickTimer = null;
   let contentSaveTimer = null;
   let titleSaveTimer = null;
-  const CLICK_DELAY = 280;
 
   const CHECKBOX_SVG =
     '<svg class="todo-checkbox-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
@@ -163,20 +161,12 @@
 
     textEl.addEventListener('click', function (e) {
       e.stopPropagation();
-      if (clickTimer) clearTimeout(clickTimer);
-      clickTimer = setTimeout(function () {
-        clickTimer = null;
-        showDetail(item);
-      }, CLICK_DELAY);
+      showDetail(item);
     });
 
     textEl.addEventListener('dblclick', function (e) {
       e.preventDefault();
       e.stopPropagation();
-      if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-      }
       if (!item.completed) {
         vscode.postMessage({ type: 'complete', id: item.id });
       }
