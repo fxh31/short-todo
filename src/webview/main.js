@@ -123,7 +123,13 @@
     }
 
     detailDate.textContent = formatDateLabel(item.date);
-    detailStatus.textContent = item.completed ? '已办' : '待办';
+    
+    if (item.completed) {
+      detailStatus.innerHTML = '<span class="status-badge done">已办</span>';
+    } else {
+      detailStatus.innerHTML = '<span class="status-badge pending">待办</span>';
+    }
+
     detailCreated.textContent = formatCreatedAt(item.createdAt);
     detailWorkspace.textContent = workspaceLabel(item.workspaceFolder);
     detailWorkspace.title = item.workspaceFolder || '';
