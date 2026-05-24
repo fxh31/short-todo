@@ -2,7 +2,7 @@
   "name": "short-todo",
   "displayName": "Short Todo",
   "description": "按日期记录的待办清单，支持详情编辑、工作区筛选，完成项显示删除线",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "ferhannah",
   "author": {
     "name": "ferhannah"
