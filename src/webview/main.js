@@ -98,9 +98,21 @@
 
   detailClose.addEventListener('click', hideDetail);
 
+  function placeDetailPanel() {
+    if (!selectedId) {
+      return;
+    }
+    const row = document.querySelector('.todo-item[data-id="' + selectedId + '"]');
+    if (row) {
+      row.after(detailPanel);
+      detailPanel.classList.remove('hidden');
+    }
+  }
+
   function hideDetail() {
     selectedId = null;
     detailPanel.classList.add('hidden');
+    document.body.appendChild(detailPanel);
     document.querySelectorAll('.todo-item.selected').forEach(function (el) {
       el.classList.remove('selected');
     });
@@ -108,7 +120,6 @@
 
   function showDetail(item) {
     selectedId = item.id;
-    detailPanel.classList.remove('hidden');
     if (document.activeElement !== detailTitleInput || detailTitleInput.dataset.editingId !== item.id) {
       detailTitleInput.value = item.text;
       detailTitleInput.dataset.editingId = item.id;
@@ -137,6 +148,8 @@
     document.querySelectorAll('.todo-item').forEach(function (el) {
       el.classList.toggle('selected', el.dataset.id === item.id);
     });
+
+    placeDetailPanel();
   }
 
   detailContentInput.addEventListener('input', function () {
@@ -202,23 +215,12 @@
       });
     });
 
-    if (selectedId) {
-      const current = allItems.find(function (i) {
-        return i.id === selectedId;
-      });
-      if (current) {
-        showDetail(current);
-      } else {
-        hideDetail();
-      }
-    }
-
     listEl.innerHTML = '';
     const total = allItems.length;
 
     if (total === 0) {
       emptyEl.classList.remove('hidden');
-      if (!selectedId) hideDetail();
+      hideDetail();
       return;
     }
     emptyEl.classList.add('hidden');
@@ -264,6 +266,17 @@
 
       listEl.appendChild(section);
     });
+
+    if (selectedId) {
+      const current = allItems.find(function (i) {
+        return i.id === selectedId;
+      });
+      if (current) {
+        showDetail(current);
+      } else {
+        hideDetail();
+      }
+    }
   }
 
   window.addEventListener('message', function (event) {
