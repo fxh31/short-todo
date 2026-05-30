@@ -20,6 +20,7 @@
   const detailContentInput = document.getElementById('detail-content-input');
   const detailDate = document.getElementById('detail-date');
   const detailStatus = document.getElementById('detail-status');
+  const detailCategory = document.getElementById('detail-category');
   const detailCreated = document.getElementById('detail-created');
   const detailWorkspace = document.getElementById('detail-workspace');
 
@@ -28,8 +29,6 @@
   let bulkSelectedIds = new Set();
   let visibleItemIds = [];
   let lastRenderData = null;
-  let contentSaveTimer = null;
-  let titleSaveTimer = null;
 
   const CHECKBOX_SVG =
     '<svg class="todo-checkbox-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
@@ -67,6 +66,25 @@
       vscode.postMessage({ type: 'toggle', id: item.id });
     });
     return btn;
+  }
+
+  function parseTodoText(text) {
+    const trimmed = text.trim();
+    const separator = ' - ';
+    const index = trimmed.lastIndexOf(separator);
+    if (index === -1) {
+      return { title: trimmed };
+    }
+    const title = trimmed.slice(0, index).trim();
+    const category = trimmed.slice(index + separator.length).trim();
+    if (!title || !category) {
+      return { title: trimmed };
+    }
+    return { title: title, category: category };
+  }
+
+  function displayTodoText(text) {
+    return parseTodoText(text).title;
   }
 
   function todayString() {
@@ -208,6 +226,15 @@
     });
   });
 
+  document.querySelectorAll('.sort-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.sort-btn').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      vscode.postMessage({ type: 'setSort', mode: btn.dataset.sort });
+    });
+  });
+
   addForm.addEventListener('submit', function (e) {
     e.preventDefault();
     const text = addInput.value.trim();
@@ -244,14 +271,17 @@
     if (document.activeElement !== detailTitleInput || detailTitleInput.dataset.editingId !== item.id) {
       detailTitleInput.value = item.text;
       detailTitleInput.dataset.editingId = item.id;
+      detailTitleInput.dataset.savedValue = item.text;
     }
     detailTitleInput.classList.toggle('done', item.completed);
     
     // Only update content value if it's not currently focused by the user
     // to prevent cursor jumping during typing
     if (document.activeElement !== detailContentInput || detailContentInput.dataset.editingId !== item.id) {
-      detailContentInput.value = item.content || '';
+      const content = item.content || '';
+      detailContentInput.value = content;
       detailContentInput.dataset.editingId = item.id;
+      detailContentInput.dataset.savedValue = content;
     }
 
     detailDate.textContent = formatDateLabel(item.date);
@@ -261,6 +291,9 @@
     } else {
       detailStatus.innerHTML = '<span class="status-badge pending">待办</span>';
     }
+
+    const parsed = parseTodoText(item.text);
+    detailCategory.textContent = parsed.category || '—';
 
     detailCreated.textContent = formatCreatedAt(item.createdAt);
     detailWorkspace.textContent = workspaceLabel(item.workspaceFolder);
@@ -273,25 +306,46 @@
     placeDetailPanel();
   }
 
-  detailContentInput.addEventListener('input', function () {
-    if (!selectedId) return;
-    if (contentSaveTimer) clearTimeout(contentSaveTimer);
+  function saveTitle() {
+    if (!selectedId) {
+      return;
+    }
+    const text = detailTitleInput.value.trim();
+    if (!text || text === detailTitleInput.dataset.savedValue) {
+      return;
+    }
+    detailTitleInput.dataset.savedValue = text;
+    vscode.postMessage({ type: 'updateText', id: selectedId, text: text });
+  }
+
+  function saveContent() {
+    if (!selectedId) {
+      return;
+    }
     const content = detailContentInput.value;
-    const id = selectedId;
-    contentSaveTimer = setTimeout(function () {
-      vscode.postMessage({ type: 'updateContent', id: id, content: content });
-    }, 500);
+    if (content === detailContentInput.dataset.savedValue) {
+      return;
+    }
+    detailContentInput.dataset.savedValue = content;
+    vscode.postMessage({ type: 'updateContent', id: selectedId, content: content });
+  }
+
+  detailTitleInput.addEventListener('blur', saveTitle);
+  detailTitleInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitle();
+      detailTitleInput.blur();
+    }
   });
 
-  detailTitleInput.addEventListener('input', function () {
-    if (!selectedId) return;
-    if (titleSaveTimer) clearTimeout(titleSaveTimer);
-    const text = detailTitleInput.value;
-    const id = selectedId;
-    titleSaveTimer = setTimeout(function () {
-      if (!text.trim()) return;
-      vscode.postMessage({ type: 'updateText', id: id, text: text });
-    }, 500);
+  detailContentInput.addEventListener('blur', saveContent);
+  detailContentInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveContent();
+      detailContentInput.blur();
+    }
   });
 
   function bindTodoInteractions(row, item) {
@@ -335,6 +389,11 @@
     document.querySelectorAll('.filter-btn').forEach(function (btn) {
       const mode = btn.dataset.filter;
       btn.classList.toggle('active', mode === data.filter);
+    });
+
+    document.querySelectorAll('.sort-btn').forEach(function (btn) {
+      const mode = btn.dataset.sort;
+      btn.classList.toggle('active', mode === data.sort);
     });
 
     const allItems = [];
@@ -389,6 +448,8 @@
       section.appendChild(heading);
 
       group.items.forEach(function (item) {
+        const parsed = parseTodoText(item.text);
+
         const row = document.createElement('div');
         row.className = 'todo-item' + (item.completed ? ' done' : '');
         if (item.id === selectedId) row.classList.add('selected');
@@ -399,7 +460,14 @@
 
         const span = document.createElement('span');
         span.className = 'todo-text';
-        span.textContent = item.text;
+        span.textContent = displayTodoText(item.text);
+
+        if (parsed.category && data.sort === 'date') {
+          const tag = document.createElement('span');
+          tag.className = 'todo-category-tag';
+          tag.textContent = parsed.category;
+          span.appendChild(tag);
+        }
 
         const del = document.createElement('button');
         del.type = 'button';
