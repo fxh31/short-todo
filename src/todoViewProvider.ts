@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { FilterMode, WebviewUpdatePayload } from './todoTypes';
+import { FilterMode, SortMode, WebviewUpdatePayload } from './todoTypes';
 import { TodoStorage, todayString } from './todoStorage';
 
 export class TodoViewProvider implements vscode.WebviewViewProvider {
@@ -9,6 +9,7 @@ export class TodoViewProvider implements vscode.WebviewViewProvider {
 
   private _view?: vscode.WebviewView;
   private _filter: FilterMode = 'all';
+  private _sort: SortMode = 'date';
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -33,8 +34,11 @@ export class TodoViewProvider implements vscode.WebviewViewProvider {
       switch (msg.type) {
         case 'ready':
         case 'setFilter':
+        case 'setSort':
           if (msg.type === 'setFilter') {
             this._filter = msg.mode === 'workspace' ? 'workspace' : 'all';
+          } else if (msg.type === 'setSort') {
+            this._sort = msg.mode === 'category' ? 'category' : 'date';
           }
           await this.postUpdate();
           break;
@@ -80,8 +84,9 @@ export class TodoViewProvider implements vscode.WebviewViewProvider {
     const store = await this.storage.load();
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     const payload: WebviewUpdatePayload = {
-      groups: this.storage.getFilteredGroups(store, this._filter),
+      groups: this.storage.getFilteredGroups(store, this._filter, this._sort),
       filter: this._filter,
+      sort: this._sort,
       hasWorkspace: !!workspaceFolder,
       workspaceName: workspaceFolder?.name,
     };

@@ -11,7 +11,11 @@
     <div class="filter-group">
       <button type="button" class="filter-btn active" data-filter="all">全部</button>
       <button type="button" class="filter-btn" data-filter="workspace" id="filter-workspace" disabled>当前工作区</button>
-      <button type="button" class="bulk-enter-btn" id="bulk-enter" title="批量删除">批量</button>
+      <button type="button" class="bulk-enter-btn" id="bulk-enter" title="批量操作">批量操作</button>
+    </div>
+    <div class="sort-group">
+      <button type="button" class="sort-btn active" data-sort="date">按日期</button>
+      <button type="button" class="sort-btn" data-sort="category">按分类</button>
     </div>
     <div class="bulk-bar hidden" id="bulk-bar">
       <span class="bulk-count" id="bulk-count">已选 0 项</span>
@@ -24,7 +28,7 @@
     </div>
     <form class="add-form" id="add-form">
       <input type="date" id="add-date" class="add-date" />
-      <input type="text" id="add-input" class="add-input" placeholder="添加待办…" autocomplete="off" />
+      <input type="text" id="add-input" class="add-input" placeholder="添加待办..." autocomplete="off" />
       <button type="submit" class="add-btn" title="添加">+</button>
     </form>
   </header>
@@ -44,6 +48,8 @@
       <dd id="detail-date"></dd>
       <dt>状态</dt>
       <dd id="detail-status"></dd>
+      <dt>分类</dt>
+      <dd id="detail-category"></dd>
       <dt>创建时间</dt>
       <dd id="detail-created"></dd>
       <dt>工作区</dt>

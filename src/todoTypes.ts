@@ -14,16 +14,18 @@ export interface TodoStore {
 }
 
 export type FilterMode = 'all' | 'workspace';
+export type SortMode = 'date' | 'category';
 
-export interface DateGroup {
-  date: string;
+export interface TodoGroup {
+  key: string;
   label: string;
   items: TodoItem[];
 }
 
 export interface WebviewUpdatePayload {
-  groups: DateGroup[];
+  groups: TodoGroup[];
   filter: FilterMode;
+  sort: SortMode;
   hasWorkspace: boolean;
   workspaceName?: string;
 }

@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { DateGroup, FilterMode, TodoItem, TodoStore } from './todoTypes';
+import { FilterMode, SortMode, TodoGroup, TodoItem, TodoStore } from './todoTypes';
+import { parseTodoText, UNCATEGORIZED_LABEL } from './todoParser';
 
 const STORE_KEY = 'todolist.store';
 const BACKUP_FILE = 'todos.json';
@@ -133,12 +134,44 @@ export class TodoStorage {
     await this.save(store);
   }
 
-  getFilteredGroups(store: TodoStore, filter: FilterMode): DateGroup[] {
+  getFilteredGroups(store: TodoStore, filter: FilterMode, sort: SortMode): TodoGroup[] {
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     let items = store.items;
 
     if (filter === 'workspace' && workspacePath) {
       items = items.filter((i) => i.workspaceFolder === workspacePath);
+    }
+
+    if (sort === 'category') {
+      const byCategory = new Map<string, TodoItem[]>();
+      for (const item of items) {
+        const { category } = parseTodoText(item.text);
+        const key = category ?? '';
+        const list = byCategory.get(key) ?? [];
+        list.push(item);
+        byCategory.set(key, list);
+      }
+
+      const keys = [...byCategory.keys()].sort((a, b) => {
+        if (a === '') {
+          return 1;
+        }
+        if (b === '') {
+          return -1;
+        }
+        return a.localeCompare(b, 'zh-CN');
+      });
+
+      return keys.map((key) => ({
+        key,
+        label: key || UNCATEGORIZED_LABEL,
+        items: (byCategory.get(key) ?? []).sort((a, b) => {
+          if (a.date !== b.date) {
+            return b.date.localeCompare(a.date);
+          }
+          return a.createdAt - b.createdAt;
+        }),
+      }));
     }
 
     const byDate = new Map<string, TodoItem[]>();
@@ -151,7 +184,7 @@ export class TodoStorage {
     const dates = [...byDate.keys()].sort((a, b) => b.localeCompare(a));
 
     return dates.map((date) => ({
-      date,
+      key: date,
       label: formatDateLabel(date),
       items: (byDate.get(date) ?? []).sort((a, b) => a.createdAt - b.createdAt),
     }));

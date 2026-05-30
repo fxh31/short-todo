@@ -23,6 +23,11 @@ body {
   gap: 4px;
 }
 
+.sort-group {
+  display: flex;
+  gap: 4px;
+}
+
 .filter-btn {
   flex: 1;
   padding: 4px 8px;
@@ -46,6 +51,26 @@ body {
 .filter-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.sort-btn {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.sort-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.sort-btn.active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
 }
 
 .bulk-enter-btn {
@@ -286,6 +311,19 @@ body.bulk-mode .todo-item .delete-btn {
   flex: 1;
   min-width: 0;
   word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.todo-category-tag {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
 }
 
 .delete-btn {
