@@ -11,6 +11,16 @@
     <div class="filter-group">
       <button type="button" class="filter-btn active" data-filter="all">全部</button>
       <button type="button" class="filter-btn" data-filter="workspace" id="filter-workspace" disabled>当前工作区</button>
+      <button type="button" class="bulk-enter-btn" id="bulk-enter" title="批量删除">批量</button>
+    </div>
+    <div class="bulk-bar hidden" id="bulk-bar">
+      <span class="bulk-count" id="bulk-count">已选 0 项</span>
+      <div class="bulk-actions">
+        <button type="button" class="bulk-action-btn" id="bulk-select-all">全选</button>
+        <button type="button" class="bulk-action-btn bulk-delete-btn" id="bulk-delete">删除</button>
+        <button type="button" class="bulk-action-btn clear-completed-btn" id="clear-completed" title="删除所有已办" disabled>清除已办</button>
+        <button type="button" class="bulk-action-btn" id="bulk-cancel">取消</button>
+      </div>
     </div>
     <form class="add-form" id="add-form">
       <input type="date" id="add-date" class="add-date" />

@@ -7,6 +7,13 @@
   const addInput = document.getElementById('add-input');
   const addDate = document.getElementById('add-date');
   const filterWorkspaceBtn = document.getElementById('filter-workspace');
+  const bulkEnterBtn = document.getElementById('bulk-enter');
+  const bulkBar = document.getElementById('bulk-bar');
+  const bulkCountEl = document.getElementById('bulk-count');
+  const bulkSelectAllBtn = document.getElementById('bulk-select-all');
+  const bulkDeleteBtn = document.getElementById('bulk-delete');
+  const bulkCancelBtn = document.getElementById('bulk-cancel');
+  const clearCompletedBtn = document.getElementById('clear-completed');
   const detailPanel = document.getElementById('detail-panel');
   const detailClose = document.getElementById('detail-close');
   const detailTitleInput = document.getElementById('detail-title-input');
@@ -17,6 +24,10 @@
   const detailWorkspace = document.getElementById('detail-workspace');
 
   let selectedId = null;
+  let bulkMode = false;
+  let bulkSelectedIds = new Set();
+  let visibleItemIds = [];
+  let lastRenderData = null;
   let contentSaveTimer = null;
   let titleSaveTimer = null;
 
@@ -28,16 +39,31 @@
     '<path d="M7.5 12.3l3.2 3.2 6.7-6.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
     '</g></svg>';
 
-  function createCheckbox(item) {
+  function syncCheckboxState(row, id) {
+    const cb = row.querySelector('.todo-checkbox');
+    if (!cb) {
+      return;
+    }
+    const checked = bulkMode ? bulkSelectedIds.has(id) : row.classList.contains('done');
+    cb.classList.toggle('checked', checked);
+    cb.setAttribute('aria-checked', checked ? 'true' : 'false');
+  }
+
+  function createCheckbox(item, row) {
+    const checked = bulkMode ? bulkSelectedIds.has(item.id) : item.completed;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'todo-checkbox' + (item.completed ? ' checked' : '');
+    btn.className = 'todo-checkbox' + (checked ? ' checked' : '');
     btn.setAttribute('role', 'checkbox');
-    btn.setAttribute('aria-checked', item.completed ? 'true' : 'false');
-    btn.title = '切换完成状态';
+    btn.setAttribute('aria-checked', checked ? 'true' : 'false');
+    btn.title = bulkMode ? '选择' : '切换完成状态';
     btn.innerHTML = CHECKBOX_SVG;
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
+      if (bulkMode) {
+        toggleBulkSelection(item.id);
+        return;
+      }
       vscode.postMessage({ type: 'toggle', id: item.id });
     });
     return btn;
@@ -76,6 +102,101 @@
   }
 
   addDate.value = todayString();
+
+  function updateBulkUi() {
+    const count = bulkSelectedIds.size;
+    bulkCountEl.textContent = '已选 ' + count + ' 项';
+    bulkDeleteBtn.disabled = count === 0;
+    bulkSelectAllBtn.textContent =
+      count > 0 && count === visibleItemIds.length ? '取消全选' : '全选';
+  }
+
+  function enterBulkMode() {
+    bulkMode = true;
+    bulkSelectedIds = new Set();
+    hideDetail();
+    bulkEnterBtn.classList.add('hidden');
+    bulkBar.classList.remove('hidden');
+    updateBulkUi();
+    document.body.classList.add('bulk-mode');
+    if (lastRenderData) {
+      render(lastRenderData);
+    }
+  }
+
+  function exitBulkMode() {
+    bulkMode = false;
+    bulkSelectedIds = new Set();
+    bulkEnterBtn.classList.remove('hidden');
+    bulkBar.classList.add('hidden');
+    updateBulkUi();
+    document.body.classList.remove('bulk-mode');
+    if (lastRenderData) {
+      render(lastRenderData);
+    }
+  }
+
+  function toggleBulkSelection(id) {
+    if (bulkSelectedIds.has(id)) {
+      bulkSelectedIds.delete(id);
+    } else {
+      bulkSelectedIds.add(id);
+    }
+    updateBulkUi();
+    document.querySelectorAll('.todo-item[data-id="' + id + '"]').forEach(function (el) {
+      el.classList.toggle('bulk-selected', bulkSelectedIds.has(id));
+      syncCheckboxState(el, id);
+    });
+  }
+
+  bulkEnterBtn.addEventListener('click', enterBulkMode);
+  bulkCancelBtn.addEventListener('click', exitBulkMode);
+  bulkSelectAllBtn.addEventListener('click', function () {
+    if (bulkSelectedIds.size === visibleItemIds.length) {
+      bulkSelectedIds = new Set();
+    } else {
+      bulkSelectedIds = new Set(visibleItemIds);
+    }
+    updateBulkUi();
+    document.querySelectorAll('.todo-item').forEach(function (el) {
+      const id = el.dataset.id;
+      const selected = bulkSelectedIds.has(id);
+      el.classList.toggle('bulk-selected', selected);
+      syncCheckboxState(el, id);
+    });
+  });
+  bulkDeleteBtn.addEventListener('click', function () {
+    if (bulkSelectedIds.size === 0) {
+      return;
+    }
+    if (bulkSelectedIds.has(selectedId)) {
+      hideDetail();
+    }
+    vscode.postMessage({ type: 'deleteMany', ids: Array.from(bulkSelectedIds) });
+    exitBulkMode();
+  });
+
+  clearCompletedBtn.addEventListener('click', function () {
+    if (clearCompletedBtn.disabled) {
+      return;
+    }
+    if (selectedId && lastRenderData) {
+      const current = lastRenderData.groups
+        .flatMap(function (g) {
+          return g.items;
+        })
+        .find(function (item) {
+          return item.id === selectedId;
+        });
+      if (current?.completed) {
+        hideDetail();
+      }
+    }
+    if (bulkMode) {
+      exitBulkMode();
+    }
+    vscode.postMessage({ type: 'deleteCompleted' });
+  });
 
   document.querySelectorAll('.filter-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -180,12 +301,19 @@
 
     textEl.addEventListener('click', function (e) {
       e.stopPropagation();
+      if (bulkMode) {
+        toggleBulkSelection(item.id);
+        return;
+      }
       showDetail(item);
     });
 
     textEl.addEventListener('dblclick', function (e) {
       e.preventDefault();
       e.stopPropagation();
+      if (bulkMode) {
+        return;
+      }
       if (!item.completed) {
         vscode.postMessage({ type: 'complete', id: item.id });
       }
@@ -193,6 +321,7 @@
   }
 
   function render(data) {
+    lastRenderData = data;
     if (data.hasWorkspace) {
       filterWorkspaceBtn.disabled = false;
       filterWorkspaceBtn.textContent = data.workspaceName
@@ -214,16 +343,41 @@
         allItems.push(item);
       });
     });
+    visibleItemIds = allItems.map(function (item) {
+      return item.id;
+    });
+    const completedCount = allItems.filter(function (item) {
+      return item.completed;
+    }).length;
+    clearCompletedBtn.disabled = completedCount === 0;
+    clearCompletedBtn.title =
+      completedCount === 0
+        ? '当前没有已办'
+        : '删除' + completedCount + '项已办';
+    if (bulkMode) {
+      bulkSelectedIds = new Set(
+        Array.from(bulkSelectedIds).filter(function (id) {
+          return visibleItemIds.includes(id);
+        })
+      );
+      updateBulkUi();
+    }
 
     listEl.innerHTML = '';
     const total = allItems.length;
 
     if (total === 0) {
       emptyEl.classList.remove('hidden');
+      bulkEnterBtn.disabled = true;
+      clearCompletedBtn.disabled = true;
       hideDetail();
+      if (bulkMode) {
+        exitBulkMode();
+      }
       return;
     }
     emptyEl.classList.add('hidden');
+    bulkEnterBtn.disabled = false;
 
     (data.groups || []).forEach(function (group) {
       const section = document.createElement('section');
@@ -238,9 +392,10 @@
         const row = document.createElement('div');
         row.className = 'todo-item' + (item.completed ? ' done' : '');
         if (item.id === selectedId) row.classList.add('selected');
+        if (bulkSelectedIds.has(item.id)) row.classList.add('bulk-selected');
         row.dataset.id = item.id;
 
-        const cb = createCheckbox(item);
+        const cb = createCheckbox(item, row);
 
         const span = document.createElement('span');
         span.className = 'todo-text';
@@ -267,7 +422,7 @@
       listEl.appendChild(section);
     });
 
-    if (selectedId) {
+    if (selectedId && !bulkMode) {
       const current = allItems.find(function (i) {
         return i.id === selectedId;
       });

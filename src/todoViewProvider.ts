@@ -53,6 +53,12 @@ export class TodoViewProvider implements vscode.WebviewViewProvider {
         case 'delete':
           await this.storage.remove(msg.id);
           break;
+        case 'deleteMany':
+          await this.storage.removeMany(msg.ids ?? []);
+          break;
+        case 'deleteCompleted':
+          await this.storage.removeCompleted(this._filter);
+          break;
         case 'add': {
           const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
           await this.storage.add(msg.text, msg.date ?? todayString(), workspaceFolder);

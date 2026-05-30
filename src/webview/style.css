@@ -48,6 +48,92 @@ body {
   cursor: not-allowed;
 }
 
+.bulk-enter-btn {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.bulk-enter-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.bulk-enter-btn.hidden {
+  display: none;
+}
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border));
+  border-radius: 4px;
+  background: var(--vscode-editor-background);
+}
+
+.bulk-bar.hidden {
+  display: none;
+}
+
+.bulk-count {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.bulk-action-btn {
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.bulk-action-btn:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.bulk-delete-btn {
+  background: var(--vscode-inputValidation-errorBackground, var(--vscode-button-background));
+  color: var(--vscode-inputValidation-errorForeground, var(--vscode-button-foreground));
+}
+
+.bulk-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clear-completed-btn:hover:not(:disabled) {
+  color: var(--vscode-errorForeground);
+}
+
+.clear-completed-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.todo-item.bulk-selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+body.bulk-mode .todo-item .delete-btn {
+  display: none;
+}
+
 .add-form {
   display: flex;
   gap: 4px;

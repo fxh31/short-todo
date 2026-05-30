@@ -101,6 +101,38 @@ export class TodoStorage {
     await this.save(store);
   }
 
+  async removeMany(ids: string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const store = await this.load();
+    const idSet = new Set(ids);
+    store.items = store.items.filter((i) => !idSet.has(i.id));
+    await this.save(store);
+  }
+
+  async removeCompleted(filter: FilterMode): Promise<void> {
+    const store = await this.load();
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    const nextItems = store.items.filter((item) => {
+      if (!item.completed) {
+        return true;
+      }
+      if (filter === 'workspace' && workspacePath) {
+        return item.workspaceFolder !== workspacePath;
+      }
+      return false;
+    });
+
+    if (nextItems.length === store.items.length) {
+      return;
+    }
+
+    store.items = nextItems;
+    await this.save(store);
+  }
+
   getFilteredGroups(store: TodoStore, filter: FilterMode): DateGroup[] {
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     let items = store.items;
